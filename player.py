@@ -76,56 +76,72 @@ class Player:
         first_song = 0
         last_song = len(self.album) - 1 
 
+        # no blocking
+        stdscr.nodelay(True)
+
         # main loop
-        while (pressed_key != ord('q')):
+        while pressed_key != ord('q'):
 
-            # Initialization
-            stdscr.clear()
-            height, width = stdscr.getmaxyx()
+            song_ended = self.isPlaying() and not self.isPaused() and not pygame.mixer.music.get_busy()
+            
+            if pressed_key != curses.ERR or song_ended:
+                
+                # initialization
+                stdscr.clear()
+                height, width = stdscr.getmaxyx()
 
-            # checks pressed keys
-            if pressed_key == curses.KEY_DOWN:
-                if selected_song < last_song:
-                    selected_song += 1
-            elif pressed_key == curses.KEY_UP:
-                if selected_song > first_song:
-                    selected_song -= 1
-            elif pressed_key == ord('p'):
-                if self.isPlaying():
-                    if self.isPaused():
-                        self.unpause()
+                # checks if song ended
+                if song_ended:
+                    if self.current_song < last_song:
+                        self.current_song += 1
+                        self.play(self.album[self.current_song])
                     else:
-                        self.pause()
-                else:
-                    self.play(self.album[self.current_song])
-            elif pressed_key == ord('s'):
-                self.play(self.album[selected_song])
-                self.current_song = selected_song
+                        self.current_song = 0
+                        self.setPlaying(False)
 
-            # help and status text 
-            help_text = f"Press 'q' to exit | Press 'p' to play/pause | Press 's' to (re)start song"
-            song_status = self.get_status()
+                # checks pressed keys
+                if pressed_key == curses.KEY_DOWN:
+                    if selected_song < last_song:
+                        selected_song += 1
+                elif pressed_key == curses.KEY_UP:
+                    if selected_song > first_song:
+                        selected_song -= 1
+                elif pressed_key == ord('p'):
+                    if self.isPlaying():
+                        if self.isPaused():
+                            self.unpause()
+                        else:
+                            self.pause()
+                    else:
+                        self.play(self.album[self.current_song])
+                elif pressed_key == ord('s'):
+                    self.play(self.album[selected_song])
+                    self.current_song = selected_song
 
-            # writes help and status
-            stdscr.attron(curses.color_pair(3))
-            stdscr.addstr(height-1, 0, song_status)
-            stdscr.addstr(height-1, len(song_status), " " * (width - len(song_status) - 1))
-            stdscr.addstr(0, 0, help_text)
-            stdscr.addstr(0, len(help_text), " " * (width - len(help_text) - 1))
-            stdscr.attroff(curses.color_pair(3))
+                # help and status text 
+                help_text = f"Press 'q' to exit | Press 'p' to play/pause | Press 's' to (re)start song"
+                song_status = self.get_status()
 
-            # writes song info on the screen
-            for i in range(len(self.album)):
-                color = 2 if i == self.current_song else 1
-                stdscr.attron(curses.color_pair(color))
-                song_info = f"{i+1} {self.album[i][:-3]}"
-                stdscr.addstr(i+1, 0, song_info)
-                stdscr.addstr(i+1, len(song_info), " " * (width - len(song_info) - 1))
-                stdscr.attroff(curses.color_pair(color))
+                # writes help and status
+                stdscr.attron(curses.color_pair(3))
+                stdscr.addstr(height-1, 0, song_status)
+                stdscr.addstr(height-1, len(song_status), " " * (width - len(song_status) - 1))
+                stdscr.addstr(0, 0, help_text)
+                stdscr.addstr(0, len(help_text), " " * (width - len(help_text) - 1))
+                stdscr.attroff(curses.color_pair(3))
 
-            # refresh
-            stdscr.refresh()
-            stdscr.move(selected_song + 1, 0)
+                # writes song info on the screen
+                for i in range(len(self.album)):
+                    color = 2 if i == self.current_song else 1
+                    stdscr.attron(curses.color_pair(color))
+                    song_info = f"{i+1} {self.album[i][:-3]}"
+                    stdscr.addstr(i+1, 0, song_info)
+                    stdscr.addstr(i+1, len(song_info), " " * (width - len(song_info) - 1))
+                    stdscr.attroff(curses.color_pair(color))
+
+                # refresh
+                stdscr.refresh()
+                stdscr.move(selected_song + 1, 0)
 
             # reads input
             pressed_key = stdscr.getch()
@@ -159,6 +175,10 @@ def main():
     # stars the player
     player = Player(album)
     player.interface()
+
+    # deletes wav files
+    for file in album:
+        Path(file).unlink()
 
 if __name__ == "__main__":
     main()
