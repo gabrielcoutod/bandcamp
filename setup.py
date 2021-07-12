@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name="bandcamp downloader",
+setup(name="bandcamp",
       author="Gabriel Couto Domingues",
       license="MIT",
       install_requires=[
@@ -9,5 +9,6 @@ setup(name="bandcamp downloader",
           "requests",
           "pygame",
           "pydub",
+          "click",
       ],
       zip_safe=False)

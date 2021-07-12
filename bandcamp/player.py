@@ -1,10 +1,13 @@
-
+import os
+from re import S
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import argparse
-from pydub import AudioSegment # needs ffmpeg
+from pydub import AudioSegment
 import curses
 from pathlib import Path
 from pydub.utils import mediainfo
+
 
 class Player:
     '''
@@ -132,9 +135,14 @@ class Player:
 
                 # writes song info on the screen
                 for i in range(len(self.album)):
+                    song_name = self.album[i]
+                    song_name = song_name[song_name.rfind('/'):] # removes dirs
+                    song_name = song_name[song_name.find('-') + 2:] # removes track number and '-'
+                    song_name = song_name[:-4] #removes extension
+
                     color = 2 if i == self.current_song else 1
                     stdscr.attron(curses.color_pair(color))
-                    song_info = f"{i+1} {self.album[i][:-3]}"
+                    song_info = f"{i+1} {song_name}"
                     stdscr.addstr(i+1, 0, song_info)
                     stdscr.addstr(i+1, len(song_info), " " * (width - len(song_info) - 1))
                     stdscr.attroff(curses.color_pair(color))
@@ -158,7 +166,6 @@ def main():
     # gets the filenames
     mp3_album = []
     for file in album_folder.glob("*.mp3"):
-        #print(path)
         mp3_album.append(file.__str__())
 
 
