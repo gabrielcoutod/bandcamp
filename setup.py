@@ -7,5 +7,7 @@ setup(name="bandcamp downloader",
           "eyed3",
           "beautifulsoup4",
           "requests",
+          "pygame",
+          "pydub",
       ],
       zip_safe=False)
