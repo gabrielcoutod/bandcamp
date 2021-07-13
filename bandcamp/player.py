@@ -20,6 +20,15 @@ class Player:
         self.paused = False
         self.current_song = 0
 
+        # song names
+        self.song_names = []
+        for songfile in self.album:
+            song_name = songfile
+            song_name = song_name[song_name.rfind('/'):] # removes dirs
+            song_name = song_name[song_name.find('-') + 2:] # removes track number and '-'
+            song_name = song_name[:-4] #removes extension
+            self.song_names.append(song_name)
+
     def setPaused(self, bool_val):
         self.paused = bool_val
 
@@ -36,9 +45,9 @@ class Player:
         if not self.isPlaying():
             return "Not Playing"
         elif self.isPaused():
-            return f"Paused {self.album[self.current_song]}"
+            return f"Paused {self.song_names[self.current_song]}"
         else:
-            return f"Playing {self.album[self.current_song]}"
+            return f"Playing {self.song_names[self.current_song]}"
     
     def play(self, filename):
         pygame.mixer.music.load(filename)
@@ -135,16 +144,11 @@ class Player:
 
                 # writes song info on the screen
                 for i in range(len(self.album)):
-                    song_name = self.album[i]
-                    song_name = song_name[song_name.rfind('/'):] # removes dirs
-                    song_name = song_name[song_name.find('-') + 2:] # removes track number and '-'
-                    song_name = song_name[:-4] #removes extension
 
                     color = 2 if i == self.current_song else 1
                     stdscr.attron(curses.color_pair(color))
-                    song_info = f"{i+1} {song_name}"
+                    song_info = f"{i+1} {self.song_names[i]}"
                     stdscr.addstr(i+1, 0, song_info)
-                    stdscr.addstr(i+1, len(song_info), " " * (width - len(song_info) - 1))
                     stdscr.attroff(curses.color_pair(color))
 
                 # refresh
