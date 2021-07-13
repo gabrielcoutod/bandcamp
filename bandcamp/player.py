@@ -19,6 +19,7 @@ class Player:
         self.playing = False 
         self.paused = False
         self.current_song = 0
+        self.len_album = len(self.album)
 
         # song names
         self.song_names = []
@@ -48,6 +49,29 @@ class Player:
             return f"Paused {self.song_names[self.current_song]}"
         else:
             return f"Playing {self.song_names[self.current_song]}"
+    
+    def get_song_range(self, curr_song_range, full_song_range, selected_song, height):
+        song_height = height - 2
+
+        if full_song_range[-1] + 1 - full_song_range[0] <= song_height:
+            return full_song_range
+        else:
+            dif = (curr_song_range[-1] + 1 - curr_song_range[0]) - song_height
+            cs = curr_song_range[0]
+            ce = curr_song_range[-1] - dif
+
+            if selected_song < cs:
+                sel_dif = selected_song - cs
+            elif selected_song > ce:
+                sel_dif = selected_song - ce
+            else:
+                sel_dif = 0
+            
+            if sel_dif == 0 and dif == 0:
+                return curr_song_range
+
+            return range(max(cs + sel_dif, full_song_range[0]), min(ce + sel_dif + 1, full_song_range[-1] + 1))
+
     
     def play(self, filename):
         pygame.mixer.music.load(filename)
@@ -85,8 +109,8 @@ class Player:
         # interface values
         selected_song = 0
         pressed_key = ''
-        first_song = 0
-        last_song = len(self.album) - 1 
+        full_song_range = range(0, self.len_album)
+        curr_song_range = range(0, self.len_album)
 
         # no blocking
         stdscr.nodelay(True)
@@ -104,7 +128,7 @@ class Player:
 
                 # checks if song ended
                 if song_ended:
-                    if self.current_song < last_song:
+                    if self.current_song < full_song_range[-1]:
                         self.current_song += 1
                         self.play(self.album[self.current_song])
                     else:
@@ -113,10 +137,10 @@ class Player:
 
                 # checks pressed keys
                 if pressed_key == curses.KEY_DOWN:
-                    if selected_song < last_song:
+                    if selected_song < full_song_range[-1]:
                         selected_song += 1
                 elif pressed_key == curses.KEY_UP:
-                    if selected_song > first_song:
+                    if selected_song > full_song_range[0]:
                         selected_song -= 1
                 elif pressed_key == ord('p'):
                     if self.isPlaying():
@@ -131,29 +155,31 @@ class Player:
                     self.current_song = selected_song
 
                 # help and status text 
-                help_text = f"Press 'q' to exit | Press 'p' to play/pause | Press 's' to (re)start song"
-                song_status = self.get_status()
+                help_text = f"Press 'q' to exit | Press 'p' to play/pause | Press 's' to (re)start song"[:width]
+                song_status = self.get_status()[:width]
 
                 # writes help and status
                 stdscr.attron(curses.color_pair(3))
                 stdscr.addstr(height-1, 0, song_status)
-                stdscr.addstr(height-1, len(song_status), " " * (width - len(song_status) - 1))
+                if len(song_status) != width:
+                    stdscr.addstr(height-1, len(song_status), " " * (width - len(song_status) - 1))
                 stdscr.addstr(0, 0, help_text)
-                stdscr.addstr(0, len(help_text), " " * (width - len(help_text) - 1))
+                if len(help_text) != width:
+                    stdscr.addstr(0, len(help_text), " " * (width - len(help_text) - 1))
                 stdscr.attroff(curses.color_pair(3))
 
-                # writes song info on the screen
-                for i in range(len(self.album)):
-
+                # writes song info
+                curr_song_range = self.get_song_range(curr_song_range, full_song_range, selected_song, height)
+                for i in curr_song_range:
                     color = 2 if i == self.current_song else 1
                     stdscr.attron(curses.color_pair(color))
-                    song_info = f"{i+1} {self.song_names[i]}"
-                    stdscr.addstr(i+1, 0, song_info)
+                    song_info = f"{i+1} {self.song_names[i]}"[:width]
+                    stdscr.addstr(i+1 - curr_song_range[0], 0, song_info)
                     stdscr.attroff(curses.color_pair(color))
 
                 # refresh
                 stdscr.refresh()
-                stdscr.move(selected_song + 1, 0)
+                stdscr.move(selected_song + 1 - curr_song_range[0], 0)
 
             # reads input
             pressed_key = stdscr.getch()
